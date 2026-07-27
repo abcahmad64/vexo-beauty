@@ -309,4 +309,3 @@ ON "Product" ("salePrice");
 
 CREATE INDEX IF NOT EXISTS "Product_aiContentStatus_idx"
 ON "Product" ("aiContentStatus");
-
