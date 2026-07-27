@@ -65,3 +65,6 @@ BACKEND_REPORT.md
 
 # Generated Prisma client
 backend/src/generated/prisma/
+
+# Temporary audit reports
+SEED_STARTUP_REPORT.txt
