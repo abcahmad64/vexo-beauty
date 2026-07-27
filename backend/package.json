@@ -25,7 +25,9 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed:system": "ts-node prisma/seed.ts",
-    "seed:catalog": "ts-node prisma/seed-catalog.ts"
+    "seed:catalog": "ts-node prisma/seed-catalog.ts",
+    "seed:demo-catalog": "ALLOW_DEMO_CATALOG=true ts-node prisma/demo-catalog.fixture.ts seed",
+    "seed:demo-catalog:cleanup": "ALLOW_DEMO_CATALOG=true ts-node prisma/demo-catalog.fixture.ts cleanup"
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.4",
