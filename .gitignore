@@ -68,3 +68,5 @@ backend/src/generated/prisma/
 
 # Temporary audit reports
 SEED_STARTUP_REPORT.txt
+
+PRODUCT_TYPE_MIGRATION_REPORT.txt
