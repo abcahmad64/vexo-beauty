@@ -5,19 +5,8 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma';
 
 import { seedAdminUser } from './seeds/admin-user.seed';
-
-import { seedAttributes } from './seeds/attributes.seed';
-
-import { seedBrands } from './seeds/brands.seed';
-
-import { seedCategories } from './seeds/categories.seed';
-
 import { seedPermissions } from './seeds/permissions.seed';
-
-import { seedProducts } from './seeds/products.seed';
-
 import { seedRbac } from './seeds/rbac.seed';
-
 import { seedRoles } from './seeds/roles.seed';
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -35,28 +24,21 @@ const prisma = new PrismaClient({
 });
 
 async function main(): Promise<void> {
+  console.log('Starting system seed...');
+
   await seedPermissions(prisma);
   await seedRoles(prisma);
-
   await seedRbac(prisma);
-
   await seedAdminUser(prisma);
-  await seedCategories(prisma);
-  await seedBrands(prisma);
-  await seedAttributes(prisma);
-  await seedProducts(prisma);
+
+  console.log('System seed completed successfully.');
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-
-    console.log('Seed completed successfully.');
+  .catch((error: unknown) => {
+    console.error('System seed failed:', error);
+    process.exitCode = 1;
   })
-  .catch(async (error: unknown) => {
-    console.error('Seed failed:', error);
-
+  .finally(async () => {
     await prisma.$disconnect();
-
-    process.exit(1);
   });
