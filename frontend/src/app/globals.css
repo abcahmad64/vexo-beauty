@@ -1,0 +1,310 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f5f2;
+  --foreground: #201b22;
+  --rose: #c95c7c;
+  --rose-soft: #f5cad7;
+  --plum: #503047;
+  --plum-deep: #261723;
+  --pearl: #fffaf6;
+  --sand: #e8d9cf;
+  --gold: #b99366;
+  --shadow-soft: 0 24px 80px rgba(67, 38, 57, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--background);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(
+      circle at 82% 6%,
+      rgba(245, 202, 215, 0.38),
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 8% 24%,
+      rgba(185, 147, 102, 0.14),
+      transparent 26rem
+    ),
+    linear-gradient(180deg, #fbf8f6 0%, #f7f1ef 50%, #f9f6f3 100%);
+  color: var(--foreground);
+  font-family:
+    Vazirmatn,
+    IRANSansX,
+    Tahoma,
+    Arial,
+    sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: rgba(201, 92, 124, 0.24);
+  color: var(--plum-deep);
+}
+
+:focus-visible {
+  outline: 3px solid rgba(201, 92, 124, 0.38);
+  outline-offset: 4px;
+}
+
+.page-shell {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+}
+
+.page-shell::before {
+  position: fixed;
+  z-index: -2;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  opacity: 0.32;
+  background-image:
+    linear-gradient(rgba(80, 48, 71, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(80, 48, 71, 0.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(to bottom, black, transparent 75%);
+}
+
+.container-vexo {
+  width: min(100% - 2rem, 86rem);
+  margin-inline: auto;
+}
+
+.glass-panel {
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.78),
+    rgba(255, 255, 255, 0.46)
+  );
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(24px);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-gradient {
+  color: transparent;
+  background: linear-gradient(
+    115deg,
+    var(--plum-deep) 10%,
+    var(--rose) 48%,
+    var(--gold) 88%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.aurora {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(20px);
+  pointer-events: none;
+}
+
+.product-stage {
+  position: relative;
+  perspective: 1100px;
+  transform-style: preserve-3d;
+}
+
+.product-stage::before {
+  position: absolute;
+  inset: 18% 8% 5%;
+  content: "";
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse,
+    rgba(80, 48, 71, 0.22),
+    rgba(80, 48, 71, 0.03) 60%,
+    transparent 72%
+  );
+  filter: blur(18px);
+  transform: rotateX(68deg) translateZ(-80px);
+}
+
+.product-bottle {
+  position: relative;
+  width: min(17rem, 58vw);
+  aspect-ratio: 0.76;
+  transform-style: preserve-3d;
+}
+
+.product-bottle__cap {
+  position: absolute;
+  z-index: 3;
+  top: 1%;
+  left: 50%;
+  width: 35%;
+  height: 22%;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: 1rem 1rem 0.55rem 0.55rem;
+  background: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.92),
+    rgba(155, 117, 139, 0.44)
+  );
+  box-shadow:
+    inset 10px 4px 22px rgba(255, 255, 255, 0.62),
+    0 16px 30px rgba(51, 30, 46, 0.16);
+  transform: translateX(-50%) translateZ(48px);
+}
+
+.product-bottle__body {
+  position: absolute;
+  inset: 19% 5% 2%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 43% 43% 27% 27% / 30% 30% 18% 18%;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.86) 4%,
+    rgba(245, 202, 215, 0.72) 33%,
+    rgba(118, 64, 91, 0.8) 100%
+  );
+  box-shadow:
+    inset 22px 6px 36px rgba(255, 255, 255, 0.58),
+    inset -20px -18px 44px rgba(42, 21, 36, 0.28),
+    0 50px 80px rgba(64, 35, 54, 0.26);
+  transform: translateZ(40px);
+}
+
+.product-bottle__body::before {
+  position: absolute;
+  top: -15%;
+  left: 8%;
+  width: 30%;
+  height: 115%;
+  content: "";
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255, 255, 255, 0.72),
+    transparent
+  );
+  filter: blur(4px);
+  transform: rotate(10deg);
+}
+
+.product-bottle__liquid {
+  position: absolute;
+  inset: 41% 7% 5%;
+  border-radius: 44% 44% 25% 25%;
+  background: linear-gradient(
+    180deg,
+    rgba(201, 92, 124, 0.12),
+    rgba(81, 42, 66, 0.64)
+  );
+  box-shadow: inset 0 22px 35px rgba(255, 255, 255, 0.16);
+}
+
+.product-bottle__label {
+  position: absolute;
+  z-index: 2;
+  top: 48%;
+  left: 50%;
+  width: 69%;
+  padding: 1.3rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  border-radius: 1.2rem;
+  background: rgba(255, 250, 246, 0.74);
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(59, 31, 50, 0.14);
+  backdrop-filter: blur(12px);
+  transform: translate(-50%, -50%) translateZ(68px);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-rtl 28s linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-rtl {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(50%);
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .container-vexo {
+    width: min(100% - 1.25rem, 86rem);
+  }
+
+  .page-shell::before {
+    background-size: 32px 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Progressive-enhancement safety: essential hero content is never hidden. */
+.product-bottle {
+  opacity: 1;
+}
+
+.hero-content {
+  opacity: 1;
+  visibility: visible;
+}
