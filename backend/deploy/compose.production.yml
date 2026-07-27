@@ -1,0 +1,248 @@
+name: vexo-beauty-production
+
+services:
+  postgres:
+    image: docker.arvancloud.ir/postgres:18.4-bookworm
+    container_name: vexo-postgres18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      PGDATA: /var/lib/postgresql/18/docker
+    volumes:
+      - vexo_postgres18_data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - data
+
+  redis:
+    image: docker.arvancloud.ir/redis:7.4-bookworm
+    container_name: vexo-redis-production
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    command:
+      - sh
+      - -c
+      - exec redis-server --appendonly yes --appendfsync everysec --requirepass "$${REDIS_PASSWORD}"
+    volumes:
+      - vexo_redis_data:/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'redis-cli --no-auth-warning -a "$${REDIS_PASSWORD}" ping | grep -q PONG',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - data
+
+  reranker:
+    image: vexo-reranker:35a
+    build:
+      context: ./ai-reranker
+      dockerfile: Dockerfile
+    container_name: vexo-reranker
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 6g
+    cpus: 16
+    environment:
+      RERANKER_MODEL_PATH: /models/Qwen3-Reranker-0.6B
+      RERANKER_MODEL_NAME: Qwen3-Reranker-0.6B
+      RERANKER_MAX_LENGTH: ${AI_RERANKER_MAX_LENGTH:-2048}
+      RERANKER_BATCH_SIZE: ${AI_RERANKER_BATCH_SIZE:-4}
+      RERANKER_TORCH_THREADS: ${AI_RERANKER_TORCH_THREADS:-16}
+      RERANKER_MAX_DOCUMENTS: ${AI_RETRIEVAL_CANDIDATE_LIMIT:-36}
+    volumes:
+      - ${VEXO_RERANKER_MODEL_DIR:-/home/vexo/vexo-models/Qwen3-Reranker-0.6B}:/models/Qwen3-Reranker-0.6B:ro
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health/readiness', timeout=5).read()",
+        ]
+      interval: 20s
+      timeout: 10s
+      retries: 30
+      start_period: 180s
+    networks:
+      - application
+
+  backend:
+    image: vexo-backend:35a
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: vexo-backend
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      HOST: 0.0.0.0
+      APP_URL: https://vexobeauty.ir/backend-api
+      FRONTEND_URL: https://vexobeauty.ir
+      CORS_ORIGINS: https://vexobeauty.ir
+      SWAGGER_SERVER_URL: https://vexobeauty.ir/backend-api
+      ZARINPAL_CALLBACK_URL: https://vexobeauty.ir/backend-api/payments/gateway/zarinpal/callback
+      PAYMENT_SUCCESS_REDIRECT_URL: https://vexobeauty.ir/payment/success
+      PAYMENT_FAILURE_REDIRECT_URL: https://vexobeauty.ir/payment/failure
+      PAYMENT_SANDBOX: 'false'
+      ZARINPAL_SANDBOX: 'false'
+      RATE_LIMIT_ENABLED: 'true'
+      RATE_LIMIT_STORAGE_DRIVER: redis
+      RATE_LIMIT_REDIS_REQUIRED: 'true'
+      RATE_LIMIT_SKIP_PATHS: ''
+      RATE_LIMIT_TRUST_PROXY: 'true'
+      TRUST_PROXY: 'true'
+      VAPID_SUBJECT: https://vexobeauty.ir
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      QUEUE_REDIS_HOST: redis
+      QUEUE_REDIS_PORT: 6379
+      QUEUE_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      AI_OLLAMA_BASE_URL: ${DOCKER_AI_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      AI_RERANKER_ENABLED: ${AI_RERANKER_ENABLED:-true}
+      AI_RERANKER_BASE_URL: http://reranker:8080
+      AI_RERANKER_TIMEOUT_MS: ${AI_RERANKER_TIMEOUT_MS:-120000}
+      AI_RUNTIME_MAX_CONCURRENT: ${AI_RUNTIME_MAX_CONCURRENT:-1}
+      AI_RUNTIME_MAX_QUEUE_DEPTH: ${AI_RUNTIME_MAX_QUEUE_DEPTH:-24}
+      AI_RUNTIME_QUEUE_TIMEOUT_MS: ${AI_RUNTIME_QUEUE_TIMEOUT_MS:-300000}
+      AI_RETRIEVAL_CANDIDATE_LIMIT: ${AI_RETRIEVAL_CANDIDATE_LIMIT:-36}
+      AI_RETRIEVAL_RERANK_LIMIT: ${AI_RETRIEVAL_RERANK_LIMIT:-12}
+      AI_RETRIEVAL_EMBED_BATCH_SIZE: ${AI_RETRIEVAL_EMBED_BATCH_SIZE:-4}
+      AI_RETRIEVAL_CACHE_MAX_ENTRIES: ${AI_RETRIEVAL_CACHE_MAX_ENTRIES:-1500}
+      MEDIA_LOCAL_ROOT: /app/public/uploads
+      MEDIA_PUBLIC_BASE_URL: /uploads
+      INVOICE_PDF_STORAGE_ROOT: /app/public/invoices
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - vexo_media_data:/app/public/uploads
+      - vexo_invoice_data:/app/public/invoices
+      - vexo_backend_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      reranker:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'curl',
+          '--fail',
+          '--silent',
+          'http://127.0.0.1:4000/health/liveness',
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - data
+      - application
+
+  frontend:
+    image: vexo-frontend:35a
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+      args:
+        APP_ENV: production
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://vexobeauty.ir}
+        INTERNAL_API_BASE_URL: http://backend:4000/api
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_SITE_URL:-https://vexobeauty.ir}/backend-api
+        NEXT_PUBLIC_MEDIA_BASE_URL: ${NEXT_PUBLIC_SITE_URL:-https://vexobeauty.ir}/uploads
+    container_name: vexo-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      APP_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://vexobeauty.ir}
+      INTERNAL_API_BASE_URL: http://backend:4000/api
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_SITE_URL:-https://vexobeauty.ir}/backend-api
+      NEXT_PUBLIC_MEDIA_BASE_URL: ${NEXT_PUBLIC_SITE_URL:-https://vexobeauty.ir}/uploads
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    networks:
+      - application
+
+  nginx:
+    image: docker.arvancloud.ir/nginx:1.28-alpine
+    container_name: vexo-nginx
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:8080:80
+    volumes:
+      - ./nginx/vexo.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--spider', 'http://127.0.0.1/healthz']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - application
+
+volumes:
+  vexo_postgres18_data:
+    name: vexo_postgres18_data
+  vexo_redis_data:
+    external: true
+    name: vexo_redis_data
+  vexo_media_data:
+    name: vexo_media_data
+  vexo_invoice_data:
+    name: vexo_invoice_data
+  vexo_backend_logs:
+    name: vexo_backend_logs
+
+networks:
+  data:
+    internal: true
+  application:
+    internal: false

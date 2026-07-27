@@ -1,0 +1,67 @@
+# Secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+**/dist/
+.next/
+**/.next/
+out/
+coverage/
+**/coverage/
+
+# Logs
+logs/
+**/logs/
+*.log
+
+# Runtime data
+uploads/
+**/uploads/
+public/uploads/
+**/public/uploads/
+
+# Database and backups
+db-backups/
+**/db-backups/
+*.dump
+*.sqlite
+*.sqlite3
+*.db
+
+# Cache and generated files
+.cache/
+**/.cache/
+.eslintcache
+*.tsbuildinfo
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated internal reports
+BACKEND_REPORT.md
+*_REPORT.md
+
+# Generated Prisma client
+backend/src/generated/prisma/

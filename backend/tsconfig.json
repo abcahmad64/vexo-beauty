@@ -1,0 +1,48 @@
+﻿{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "ignoreDeprecations": "5.0",
+
+    "target": "ES2023",
+    "lib": ["ES2023"],
+
+    "declaration": true,
+    "sourceMap": true,
+    "removeComments": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    "baseUrl": "./",
+    "paths": {
+      "src/*": ["src/*"]
+    },
+
+    "incremental": true,
+    "skipLibCheck": true,
+
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "isolatedModules": false,
+
+    "strict": false,
+    "strictNullChecks": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "strictPropertyInitialization": false,
+    "noFallthroughCasesInSwitch": false,
+
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "prisma/**/*.ts",
+    "src/debug/**/*.ts"
+  ]
+}
