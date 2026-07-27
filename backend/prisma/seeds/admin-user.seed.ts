@@ -4,10 +4,25 @@ import * as bcrypt from 'bcrypt';
 
 import { Prisma, PrismaClient } from '../../src/generated/prisma';
 
-export async function seedAdminUser(prisma: PrismaClient): Promise<void> {
-  const email = process.env.SEED_ADMIN_EMAIL || 'admin@vexo-beauty.local';
+function getRequiredEnvironmentVariable(name: string): string {
+  const value = process.env[name]?.trim();
 
-  const password = process.env.SEED_ADMIN_PASSWORD || 'Admin@123456';
+  if (!value) {
+    throw new Error(`${name} is required for admin user seeding.`);
+  }
+
+  return value;
+}
+
+export async function seedAdminUser(prisma: PrismaClient): Promise<void> {
+  const email = getRequiredEnvironmentVariable('SEED_ADMIN_EMAIL');
+  const password = getRequiredEnvironmentVariable('SEED_ADMIN_PASSWORD');
+
+  if (password.length < 14) {
+    throw new Error(
+      'SEED_ADMIN_PASSWORD must contain at least 14 characters.',
+    );
+  }
 
   const passwordHash = await bcrypt.hash(password, 12);
 
