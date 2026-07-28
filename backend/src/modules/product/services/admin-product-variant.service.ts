@@ -528,7 +528,45 @@ export class AdminProductVariantService {
   }
 
   async delete(variantId: string, actorId?: string) {
-    await this.findVariantRow(variantId, true);
+    /* ADMIN_VARIANT_SAFE_DELETE_V1 */
+
+    const variant = await this.findVariantRow(
+      variantId,
+      true,
+    );
+
+    if (variant.deletedAt) {
+      throw new BadRequestException(
+        'واریانت قبلاً حذف شده است.',
+      );
+    }
+
+    const reservationRows =
+      await this.prisma.$queryRaw<
+        Array<{
+          reservedQuantity: number | bigint;
+        }>
+      >(
+        Prisma.sql`
+          SELECT
+            COALESCE(
+              SUM(i."reservedQuantity"),
+              0
+            )::int AS "reservedQuantity"
+          FROM "Inventory" i
+          WHERE i."variantId" = ${variantId}
+        `,
+      );
+
+    const reservedQuantity = this.toNumber(
+      reservationRows[0]?.reservedQuantity,
+    );
+
+    if (reservedQuantity > 0) {
+      throw new ConflictException(
+        'واریانت دارای موجودی رزروشده است و قابل حذف نیست.',
+      );
+    }
 
     const now = new Date();
 

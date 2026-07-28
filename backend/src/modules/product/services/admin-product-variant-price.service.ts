@@ -36,15 +36,19 @@ export class AdminProductVariantPriceService {
       );
     }
 
+    /* ADMIN_VARIANT_NULLABLE_PRICE_SERVICE_V1 */
+
     const nextPrice =
       dto.price !== undefined
-        ? new Prisma.Decimal(dto.price)
+        ? this.toNullableDecimal(dto.price)
         : this.toNullableDecimal(variant.price);
 
     const nextComparePrice =
       dto.comparePrice !== undefined
-        ? new Prisma.Decimal(dto.comparePrice)
-        : this.toNullableDecimal(variant.comparePrice);
+        ? this.toNullableDecimal(dto.comparePrice)
+        : this.toNullableDecimal(
+            variant.comparePrice,
+          );
 
     if (nextPrice && nextComparePrice && nextComparePrice.lessThan(nextPrice)) {
       throw new BadRequestException(
@@ -55,12 +59,18 @@ export class AdminProductVariantPriceService {
     const assignments: Prisma.Sql[] = [];
 
     if (dto.price !== undefined) {
-      assignments.push(Prisma.sql`"price" = ${dto.price}::numeric`);
+      assignments.push(
+        dto.price === null
+          ? Prisma.sql`"price" = NULL`
+          : Prisma.sql`"price" = ${dto.price}::numeric`,
+      );
     }
 
     if (dto.comparePrice !== undefined) {
       assignments.push(
-        Prisma.sql`"comparePrice" = ${dto.comparePrice}::numeric`,
+        dto.comparePrice === null
+          ? Prisma.sql`"comparePrice" = NULL`
+          : Prisma.sql`"comparePrice" = ${dto.comparePrice}::numeric`,
       );
     }
 
@@ -89,7 +99,11 @@ export class AdminProductVariantPriceService {
   }
 
   private toNullableDecimal(
-    value: Prisma.Decimal | number | string | null,
+    value:
+      | Prisma.Decimal
+      | number
+      | string
+      | null,
   ): Prisma.Decimal | null {
     if (value === null) {
       return null;

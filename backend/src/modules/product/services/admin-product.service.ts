@@ -2232,7 +2232,12 @@ export class AdminProductService {
     return Prisma.sql`${value.toFixed(4)}::numeric`;
   }
 
-  private toJsonb(value?: Record<string, unknown>): Prisma.Sql {
+  private toJsonb(
+    value:
+      | Record<string, unknown>
+      | null
+      | undefined,
+  ): Prisma.Sql {
     if (value === undefined || value === null) {
       return Prisma.sql`NULL`;
     }
