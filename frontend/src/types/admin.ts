@@ -482,6 +482,85 @@ export type AdminInventoryListPayload = {
   };
 };
 
+/* ADMIN_VARIANT_ATTRIBUTE_MATRIX_TYPES_V1 */
+
+export type AdminVariantAttributeValueOption = {
+  id: string;
+  attributeId: string;
+  value: string;
+};
+
+export type AdminVariantAttributeDefinition = {
+  id: string;
+  name: string;
+  code: string | null;
+  label: string;
+  description: string | null;
+  dataType:
+    | 'TEXT'
+    | 'NUMBER'
+    | 'BOOLEAN'
+    | 'ENUM'
+    | 'MULTI_SELECT'
+    | 'JSON'
+    | 'DATE';
+  inputType:
+    | 'TEXT'
+    | 'TEXTAREA'
+    | 'NUMBER'
+    | 'SWITCH'
+    | 'SELECT'
+    | 'MULTI_SELECT'
+    | 'DATE'
+    | 'COLOR'
+    | 'RICH_TEXT';
+  unit: string | null;
+  options: string[];
+  placeholder: string | null;
+  helpText: string | null;
+  isFilterable: boolean;
+  isComparable: boolean;
+  isSeoImportant: boolean;
+  isAiImportant: boolean;
+  isActive: boolean;
+};
+
+export type AdminVariantAttributeField = {
+  id: string;
+  templateId: string;
+  attributeId: string;
+  groupName: string | null;
+  isRequired: boolean;
+  sortOrder: number;
+  attribute: AdminVariantAttributeDefinition;
+  values: AdminVariantAttributeValueOption[];
+};
+
+export type AdminVariantAttributeTemplate = {
+  id: string;
+  scope:
+    | 'CATEGORY'
+    | 'PRODUCT_TYPE'
+    | 'BRAND_PRODUCT_TYPE'
+    | 'PRODUCT_MODEL';
+  name: string;
+  categoryId: string | null;
+  productTypeId: string | null;
+  brandId: string | null;
+  productModelId: string | null;
+  priority: number;
+  isDefault: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+};
+
+export type AdminVariantAttributeMatrixPayload = {
+  templates: AdminVariantAttributeTemplate[];
+  fields: AdminVariantAttributeField[];
+};
+
 /* ADMIN_PRODUCT_VARIANT_TYPES_V1 */
 
 export type AdminProductVariantStock = {
@@ -511,6 +590,7 @@ export type AdminProductVariantListItem = {
   imageUrl: string | null;
   isActive: boolean;
   stock: AdminProductVariantStock;
+  attributes: AdminProductVariantAttribute[];
   createdAt: string;
   createdAtFa: string | null;
   updatedAt: string;

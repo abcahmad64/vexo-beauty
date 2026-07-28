@@ -45,6 +45,7 @@ import type {
   AdminProductDetail,
   AdminProductVariantListItem,
   AdminProductVariantListPayload,
+  AdminVariantAttributeMatrixPayload,
   AdminWarehouseListPayload,
   AdminWarehouseOption,
 } from '@/types/admin';
@@ -455,6 +456,31 @@ export function AdminProductDetailScreen({
   const [variantActiveDraft, setVariantActiveDraft] =
     useState(true);
 
+  /* ADMIN_VARIANT_ATTRIBUTE_SELECTOR_V1 */
+
+  const [
+    variantAttributeMatrix,
+    setVariantAttributeMatrix,
+  ] =
+    useState<AdminVariantAttributeMatrixPayload | null>(
+      null,
+    );
+
+  const [
+    variantAttributeMatrixLoading,
+    setVariantAttributeMatrixLoading,
+  ] = useState(false);
+
+  const [
+    variantAttributeMatrixError,
+    setVariantAttributeMatrixError,
+  ] = useState<string | null>(null);
+
+  const [
+    selectedVariantAttributeValues,
+    setSelectedVariantAttributeValues,
+  ] = useState<Record<string, string>>({});
+
   const [editingVariantId, setEditingVariantId] =
     useState<string | null>(null);
 
@@ -573,6 +599,142 @@ export function AdminProductDetailScreen({
       setCatalogLoading(false);
     }
   }, [productId]);
+
+  const loadVariantAttributeMatrix =
+    useCallback(
+      async (
+        currentProduct: AdminProductDetail,
+      ): Promise<void> => {
+        const categoryId =
+          currentProduct.category?.id?.trim() ?? '';
+
+        if (!categoryId) {
+          setVariantAttributeMatrix(null);
+          setSelectedVariantAttributeValues({});
+          setVariantAttributeMatrixError(
+            'برای این محصول دسته‌بندی معتبری ثبت نشده است.',
+          );
+          return;
+        }
+
+        setVariantAttributeMatrixLoading(true);
+        setVariantAttributeMatrixError(null);
+
+        const query = new URLSearchParams({
+          categoryId,
+        });
+
+        const brandId =
+          currentProduct.brand?.id?.trim() ?? '';
+
+        const productTypeId =
+          currentProduct.productType?.id?.trim() ?? '';
+
+        const productModelId =
+          currentProduct.productModel?.id?.trim() ?? '';
+
+        if (brandId) {
+          query.set('brandId', brandId);
+        }
+
+        if (productTypeId) {
+          query.set(
+            'productTypeId',
+            productTypeId,
+          );
+        }
+
+        if (productModelId) {
+          query.set(
+            'productModelId',
+            productModelId,
+          );
+        }
+
+        try {
+          const response = await fetch(
+            `/api/admin/product-catalog/variant-attributes?${query.toString()}`,
+            {
+              cache: 'no-store',
+            },
+          );
+
+          if (response.status === 401) {
+            window.location.href =
+              `/admin/login?next=${encodeURIComponent(
+                `/admin/products/${productId}`,
+              )}`;
+
+            return;
+          }
+
+          const envelope =
+            (await response.json()) as AdminApiEnvelope<AdminVariantAttributeMatrixPayload>;
+
+          if (
+            !response.ok ||
+            envelope.success !== true ||
+            !envelope.data
+          ) {
+            throw new Error(
+              envelope.message ||
+                'دریافت ویژگی‌های واریانت انجام نشد.',
+            );
+          }
+
+          /* ADMIN_VARIANT_ATTRIBUTE_SELECTOR_FIX_V1 */
+
+          const matrixData = envelope.data;
+
+          setVariantAttributeMatrix(
+            matrixData,
+          );
+
+          setSelectedVariantAttributeValues(
+            (current) => {
+              const validSelections: Record<
+                string,
+                string
+              > = {};
+
+              for (const field of matrixData.fields) {
+                const selectedValueId =
+                  current[field.attributeId];
+
+                if (
+                  selectedValueId &&
+                  field.values.some(
+                    (value) =>
+                      value.id === selectedValueId,
+                  )
+                ) {
+                  validSelections[field.attributeId] =
+                    selectedValueId;
+                }
+              }
+
+              return validSelections;
+            },
+          );
+        } catch (error) {
+          setVariantAttributeMatrix(null);
+          setSelectedVariantAttributeValues(
+            {},
+          );
+
+          setVariantAttributeMatrixError(
+            error instanceof Error
+              ? error.message
+              : 'دریافت ویژگی‌های واریانت انجام نشد.',
+          );
+        } finally {
+          setVariantAttributeMatrixLoading(
+            false,
+          );
+        }
+      },
+      [productId],
+    );
 
   /* ADMIN_VARIANT_DRAFT_SYNC_V1 */
   /* ADMIN_VARIANT_DRAFT_SYNC_RETURN_FIX_V1 */
@@ -2108,6 +2270,94 @@ export function AdminProductDetailScreen({
     }
   }
 
+  /* ADMIN_VARIANT_ATTRIBUTE_SELECTOR_EFFECT_FIX_V1 */
+
+  /* ADMIN_VARIANT_ATTRIBUTE_DUPLICATE_UI_V1 */
+
+  const selectedVariantAttributeValueIds =
+    (variantAttributeMatrix?.fields ?? [])
+      .map(
+        (field) =>
+          selectedVariantAttributeValues[
+            field.attributeId
+          ],
+      )
+      .filter(
+        (value): value is string =>
+          Boolean(value),
+      );
+
+  const selectedVariantAttributeSignature =
+    [...selectedVariantAttributeValueIds]
+      .sort()
+      .join('|');
+
+  const duplicateVariant =
+    selectedVariantAttributeValueIds.length > 0
+      ? variants.find((variant) => {
+          const existingSignature =
+            [...variant.attributes]
+              .map(
+                (attribute) =>
+                  attribute.attributeValueId,
+              )
+              .sort()
+              .join('|');
+
+          return (
+            existingSignature ===
+            selectedVariantAttributeSignature
+          );
+        }) ?? null
+      : null;
+
+  useEffect(() => {
+    if (!product) {
+      return;
+    }
+
+    let isCurrent = true;
+
+    queueMicrotask(() => {
+      if (!isCurrent) {
+        return;
+      }
+
+      void loadVariantAttributeMatrix(product);
+    });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [
+    loadVariantAttributeMatrix,
+    product,
+  ]);
+
+  function selectVariantAttributeValue(
+    attributeId: string,
+    attributeValueId: string,
+  ) {
+    setSelectedVariantAttributeValues(
+      (current) => {
+        if (!attributeValueId) {
+          const next = {
+            ...current,
+          };
+
+          delete next[attributeId];
+
+          return next;
+        }
+
+        return {
+          ...current,
+          [attributeId]: attributeValueId,
+        };
+      },
+    );
+  }
+
   async function submitProductVariant(
     event: React.FormEvent<HTMLFormElement>,
   ) {
@@ -2133,6 +2383,41 @@ export function AdminProductDetailScreen({
 
     const comparePrice =
       variantComparePriceDraft.trim();
+
+    const matrixFields =
+      variantAttributeMatrix?.fields ?? [];
+
+    const missingRequiredField =
+      matrixFields.find(
+        (field) =>
+          field.isRequired &&
+          !selectedVariantAttributeValues[
+            field.attributeId
+          ],
+      );
+
+    if (missingRequiredField) {
+      setActionFeedback({
+        tone: 'error',
+        message:
+          `انتخاب «${missingRequiredField.attribute.label}» برای ساخت واریانت الزامی است.`,
+      });
+
+      return;
+    }
+
+    const attributeValueIds =
+      selectedVariantAttributeValueIds;
+
+    if (duplicateVariant) {
+      setActionFeedback({
+        tone: 'error',
+        message:
+          `این ترکیب قبلاً برای واریانت «${duplicateVariant.name || duplicateVariant.sku}» ثبت شده است.`,
+      });
+
+      return;
+    }
 
     if (!sku) {
       setActionFeedback({
@@ -2213,6 +2498,9 @@ export function AdminProductDetailScreen({
             ...(comparePrice
               ? { comparePrice }
               : {}),
+            ...(attributeValueIds.length > 0
+              ? { attributeValueIds }
+              : {}),
             isActive: variantActiveDraft,
           }),
         },
@@ -2245,6 +2533,7 @@ export function AdminProductDetailScreen({
       setVariantPriceDraft('');
       setVariantComparePriceDraft('');
       setVariantActiveDraft(true);
+      setSelectedVariantAttributeValues({});
 
       await Promise.all([
         loadVariants(),
@@ -5001,8 +5290,8 @@ export function AdminProductDetailScreen({
                   <strong>ایجاد واریانت جدید</strong>
 
                   <span>
-                    ویژگی‌های رنگ، حجم و اندازه در مرحله
-                    Attribute Matrix متصل می‌شوند.
+                    ترکیب ویژگی‌ها را انتخاب کن و سپس
+                    اطلاعات تجاری واریانت را وارد کن.
                   </span>
                 </div>
 
@@ -5027,6 +5316,211 @@ export function AdminProductDetailScreen({
                     aria-hidden="true"
                   />
                 </button>
+              </div>
+
+              <div className="admin-variant-attribute-matrix">
+                <div className="admin-variant-attribute-matrix__heading">
+                  <div>
+                    <strong>
+                      ترکیب ویژگی‌های واریانت
+                    </strong>
+
+                    <span>
+                      از هر ویژگی حداکثر یک مقدار
+                      انتخاب می‌شود.
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void loadVariantAttributeMatrix(
+                        product,
+                      )
+                    }
+                    disabled={
+                      variantAttributeMatrixLoading ||
+                      variantCreatePending
+                    }
+                    aria-label="بازخوانی ویژگی‌های واریانت"
+                  >
+                    <RefreshCcw
+                      className={
+                        variantAttributeMatrixLoading
+                          ? 'is-spinning'
+                          : ''
+                      }
+                      aria-hidden="true"
+                    />
+                  </button>
+                </div>
+
+                {variantAttributeMatrixLoading ? (
+                  <div className="admin-variant-attribute-matrix__state">
+                    <LoaderCircle
+                      className="is-spinning"
+                      aria-hidden="true"
+                    />
+
+                    <span>
+                      در حال دریافت ویژگی‌ها...
+                    </span>
+                  </div>
+                ) : variantAttributeMatrixError ? (
+                  <div className="admin-variant-attribute-matrix__error">
+                    <AlertTriangle
+                      aria-hidden="true"
+                    />
+
+                    <span>
+                      {variantAttributeMatrixError}
+                    </span>
+                  </div>
+                ) : !variantAttributeMatrix ||
+                  variantAttributeMatrix.fields
+                    .length === 0 ? (
+                  <div className="admin-variant-attribute-matrix__empty">
+                    <Tag aria-hidden="true" />
+
+                    <span>
+                      برای طبقه‌بندی این محصول قالب
+                      ویژگی فعالی تعریف نشده است.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="admin-variant-attribute-matrix__fields">
+                    {variantAttributeMatrix.fields.map(
+                      (field) => (
+                        <label
+                          key={field.attributeId}
+                          className="admin-variant-attribute-field"
+                        >
+                          <span className="admin-variant-attribute-field__label">
+                            <strong>
+                              {field.attribute.label}
+                            </strong>
+
+                            {field.isRequired ? (
+                              <b>الزامی</b>
+                            ) : (
+                              <small>اختیاری</small>
+                            )}
+                          </span>
+
+                          <select
+                            value={
+                              selectedVariantAttributeValues[
+                                field.attributeId
+                              ] ?? ''
+                            }
+                            onChange={(event) =>
+                              selectVariantAttributeValue(
+                                field.attributeId,
+                                event.target.value,
+                              )
+                            }
+                            required={field.isRequired}
+                            disabled={
+                              variantCreatePending ||
+                              field.values.length === 0 ||
+                              Boolean(
+                                product.deletedAt,
+                              )
+                            }
+                          >
+                            <option value="">
+                              {field.values.length === 0
+                                ? 'مقداری ثبت نشده است'
+                                : `انتخاب ${field.attribute.label}`}
+                            </option>
+
+                            {field.values.map(
+                              (value) => (
+                                <option
+                                  key={value.id}
+                                  value={value.id}
+                                >
+                                  {value.value}
+                                  {field.attribute.unit
+                                    ? ` ${field.attribute.unit}`
+                                    : ''}
+                                </option>
+                              ),
+                            )}
+                          </select>
+
+                          {field.attribute.helpText ? (
+                            <small className="admin-variant-attribute-field__help">
+                              {field.attribute.helpText}
+                            </small>
+                          ) : null}
+                        </label>
+                      ),
+                    )}
+                  </div>
+                )}
+
+                {duplicateVariant ? (
+                  <div
+                    className="admin-variant-attribute-matrix__duplicate"
+                    role="alert"
+                  >
+                    <AlertTriangle
+                      aria-hidden="true"
+                    />
+
+                    <div>
+                      <strong>
+                        این ترکیب قبلاً ثبت شده است
+                      </strong>
+
+                      <span>
+                        واریانت:
+                        {' '}
+                        {duplicateVariant.name ||
+                          duplicateVariant.sku}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+
+                {Object.keys(
+                  selectedVariantAttributeValues,
+                ).length > 0 ? (
+                  <div className="admin-variant-attribute-matrix__summary">
+                    <span>ترکیب انتخاب‌شده:</span>
+
+                    <div>
+                      {variantAttributeMatrix?.fields
+                        .map((field) => {
+                          const selectedId =
+                            selectedVariantAttributeValues[
+                              field.attributeId
+                            ];
+
+                          const selectedValue =
+                            field.values.find(
+                              (value) =>
+                                value.id === selectedId,
+                            );
+
+                          if (!selectedValue) {
+                            return null;
+                          }
+
+                          return (
+                            <b
+                              key={field.attributeId}
+                            >
+                              {field.attribute.label}:
+                              {' '}
+                              {selectedValue.value}
+                            </b>
+                          );
+                        })}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div className="admin-product-variant-create__grid">
@@ -5138,6 +5632,7 @@ export function AdminProductDetailScreen({
                 disabled={
                   variantCreatePending ||
                   !variantSkuDraft.trim() ||
+                  Boolean(duplicateVariant) ||
                   Boolean(product.deletedAt)
                 }
               >
@@ -5241,6 +5736,26 @@ export function AdminProductDetailScreen({
                                 {variant.slug ||
                                   'اسلاگ ثبت نشده'}
                               </span>
+
+                              {variant.attributes.length > 0 ? (
+                                <div className="admin-product-variant-attributes">
+                                  {variant.attributes.map(
+                                    (attribute) => (
+                                      <b
+                                        key={
+                                          attribute.attributeValueId
+                                        }
+                                      >
+                                        <span>
+                                          {attribute.attributeName}
+                                        </span>
+
+                                        {attribute.value}
+                                      </b>
+                                    ),
+                                  )}
+                                </div>
+                              ) : null}
                             </div>
                           </td>
 

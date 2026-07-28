@@ -1234,6 +1234,41 @@ export class AdminProductCatalogService {
     };
   }
 
+  /* ADMIN_VARIANT_ATTRIBUTE_MATRIX_DATA_V1 */
+
+  async getVariantAttributes(
+    dto: AdminResolveProductAttributeTemplateDto,
+  ) {
+    const resolved =
+      await this.resolveAttributeTemplate(dto);
+
+    const fields = await Promise.all(
+      resolved.fields.map(async (field) => {
+        const values =
+          await this.findAttributeValues(
+            field.attribute.id,
+            {
+              includeDeleted: false,
+            },
+          );
+
+        return {
+          ...field,
+          values: values.map((value) => ({
+            id: value.id,
+            attributeId: value.attributeId,
+            value: value.value,
+          })),
+        };
+      }),
+    );
+
+    return {
+      templates: resolved.templates,
+      fields,
+    };
+  }
+
   async createAttributeTemplate(dto: AdminCreateProductAttributeTemplateDto) {
     await this.assertTemplateScopeValid(dto);
 
