@@ -1,10 +1,5 @@
-import { AdminModulePlaceholder } from '@/components/admin/admin-module-placeholder';
+import { AdminCustomersScreen } from '@/components/admin/admin-customers-screen';
 
 export default function AdminCustomersPage() {
-  return (
-    <AdminModulePlaceholder
-      title="مدیریت مشتریان"
-      description="مشاهده مشتریان، دسترسی‌ها و تاریخچه فعالیت"
-    />
-  );
+  return <AdminCustomersScreen />;
 }
