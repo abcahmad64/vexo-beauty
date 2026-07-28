@@ -58,6 +58,11 @@ type VariantAttributeRow = {
   value: string;
 };
 
+type VariantListAttributeRow =
+  VariantAttributeRow & {
+    variantId: string;
+  };
+
 type VariantInventoryRow = {
   inventoryId: string;
   warehouseId: string;
@@ -96,6 +101,12 @@ type ProductVariantResponse = {
     availableStock: number;
     lowStockThreshold: number;
   };
+  attributes: Array<{
+    attributeId: string;
+    attributeName: string;
+    attributeValueId: string;
+    value: string;
+  }>;
   createdAt: string;
   createdAtFa: string;
   updatedAt: string;
@@ -183,10 +194,22 @@ export class AdminProductVariantService {
       ),
     ]);
 
+    /* ADMIN_VARIANT_ATTRIBUTE_LIST_DUPLICATE_V1 */
+
     const total = this.toNumber(countRows[0]?.count);
 
+    const attributesByVariantId =
+      await this.findVariantAttributesByVariantIds(
+        rows.map((row) => row.id),
+      );
+
     return {
-      data: rows.map((row) => this.mapVariant(row)),
+      data: rows.map((row) =>
+        this.mapVariant(
+          row,
+          attributesByVariantId.get(row.id) ?? [],
+        ),
+      ),
       meta: {
         page,
         limit,
@@ -205,13 +228,10 @@ export class AdminProductVariantService {
     ]);
 
     return {
-      ...this.mapVariant(variant),
-      attributes: attributes.map((attribute) => ({
-        attributeId: attribute.attributeId,
-        attributeName: attribute.attributeName,
-        attributeValueId: attribute.attributeValueId,
-        value: attribute.value,
-      })),
+      ...this.mapVariant(
+        variant,
+        attributes,
+      ),
       inventories: inventories.map((inventory) => ({
         inventoryId: inventory.inventoryId,
         warehouseId: inventory.warehouseId,
@@ -256,7 +276,21 @@ export class AdminProductVariantService {
       await this.assertSlugUnique(slug);
     }
 
-    await this.assertAttributeValuesExist(dto.attributeValueIds ?? []);
+    const attributeValueIds =
+      dto.attributeValueIds ?? [];
+
+    await this.assertAttributeValuesExist(
+      attributeValueIds,
+    );
+
+    await this.assertDistinctVariantAttributes(
+      attributeValueIds,
+    );
+
+    await this.assertVariantCombinationUnique(
+      dto.productId,
+      attributeValueIds,
+    );
 
     const now = new Date();
 
@@ -305,7 +339,7 @@ export class AdminProductVariantService {
       await this.syncVariantAttributesTx(
         tx,
         variantId,
-        dto.attributeValueIds ?? [],
+        attributeValueIds,
       );
     });
 
@@ -323,7 +357,11 @@ export class AdminProductVariantService {
     dto: AdminUpdateProductVariantDto,
     actorId?: string,
   ) {
-    await this.findVariantRow(variantId, true);
+    const currentVariant =
+      await this.findVariantRow(
+        variantId,
+        true,
+      );
 
     if (dto.sku !== undefined) {
       await this.assertSkuUnique(dto.sku, variantId);
@@ -353,7 +391,19 @@ export class AdminProductVariantService {
     }
 
     if (dto.attributeValueIds !== undefined) {
-      await this.assertAttributeValuesExist(dto.attributeValueIds);
+      await this.assertAttributeValuesExist(
+        dto.attributeValueIds,
+      );
+
+      await this.assertDistinctVariantAttributes(
+        dto.attributeValueIds,
+      );
+
+      await this.assertVariantCombinationUnique(
+        currentVariant.productId,
+        dto.attributeValueIds,
+        variantId,
+      );
     }
 
     const assignments = this.buildUpdateAssignments(dto);
@@ -955,6 +1005,104 @@ export class AdminProductVariantService {
     }
   }
 
+  private async assertDistinctVariantAttributes(
+    attributeValueIds: string[],
+  ): Promise<void> {
+    const uniqueIds =
+      Array.from(new Set(attributeValueIds));
+
+    if (uniqueIds.length === 0) {
+      return;
+    }
+
+    const duplicateAttributeRows =
+      await this.prisma.$queryRaw<
+        Array<{
+          attributeId: string;
+          valueCount: number | bigint;
+        }>
+      >(
+        Prisma.sql`
+          SELECT
+            av."attributeId",
+            COUNT(*)::int AS "valueCount"
+          FROM "AttributeValue" av
+          WHERE av."id" IN (
+            ${Prisma.join(uniqueIds)}
+          )
+          GROUP BY av."attributeId"
+          HAVING COUNT(*) > 1
+        `,
+      );
+
+    if (duplicateAttributeRows.length > 0) {
+      throw new BadRequestException(
+        'برای هر ویژگی فقط یک مقدار قابل انتخاب است.',
+      );
+    }
+  }
+
+  private async assertVariantCombinationUnique(
+    productId: string,
+    attributeValueIds: string[],
+    exceptVariantId?: string,
+  ): Promise<void> {
+    const uniqueIds =
+      Array.from(new Set(attributeValueIds));
+
+    if (uniqueIds.length === 0) {
+      return;
+    }
+
+    const exclusions: Prisma.Sql[] = [
+      Prisma.sql`pv."productId" = ${productId}`,
+      Prisma.sql`pv."deleted_at" IS NULL`,
+    ];
+
+    if (exceptVariantId) {
+      exclusions.push(
+        Prisma.sql`pv."id" <> ${exceptVariantId}`,
+      );
+    }
+
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        id: string;
+      }>
+    >(
+      Prisma.sql`
+        SELECT pv."id"
+        FROM "ProductVariant" pv
+        LEFT JOIN "VariantAttribute" va
+          ON va."variantId" = pv."id"
+        WHERE ${Prisma.join(
+          exclusions,
+          ' AND ',
+        )}
+        GROUP BY pv."id"
+        HAVING
+          COUNT(
+            DISTINCT va."attributeValueId"
+          ) = ${uniqueIds.length}
+          AND COUNT(
+            DISTINCT CASE
+              WHEN va."attributeValueId" IN (
+                ${Prisma.join(uniqueIds)}
+              )
+              THEN va."attributeValueId"
+            END
+          ) = ${uniqueIds.length}
+        LIMIT 1
+      `,
+    );
+
+    if (rows.length > 0) {
+      throw new ConflictException(
+        'واریانت دیگری با همین ترکیب ویژگی‌ها ثبت شده است.',
+      );
+    }
+  }
+
   private async syncVariantAttributesTx(
     tx: Prisma.TransactionClient,
     variantId: string,
@@ -990,6 +1138,62 @@ export class AdminProductVariantService {
         `,
       );
     }
+  }
+
+  private async findVariantAttributesByVariantIds(
+    variantIds: string[],
+  ): Promise<
+    Map<string, VariantAttributeRow[]>
+  > {
+    const result =
+      new Map<string, VariantAttributeRow[]>();
+
+    if (variantIds.length === 0) {
+      return result;
+    }
+
+    const rows =
+      await this.prisma.$queryRaw<
+        VariantListAttributeRow[]
+      >(
+        Prisma.sql`
+          SELECT
+            va."variantId",
+            a."id" AS "attributeId",
+            a."name" AS "attributeName",
+            av."id" AS "attributeValueId",
+            av."value"
+          FROM "VariantAttribute" va
+          INNER JOIN "AttributeValue" av
+            ON av."id" = va."attributeValueId"
+          INNER JOIN "Attribute" a
+            ON a."id" = av."attributeId"
+          WHERE va."variantId" IN (
+            ${Prisma.join(variantIds)}
+          )
+          ORDER BY
+            va."variantId" ASC,
+            a."name" ASC,
+            av."value" ASC
+        `,
+      );
+
+    for (const row of rows) {
+      const current =
+        result.get(row.variantId) ?? [];
+
+      current.push({
+        attributeId: row.attributeId,
+        attributeName: row.attributeName,
+        attributeValueId:
+          row.attributeValueId,
+        value: row.value,
+      });
+
+      result.set(row.variantId, current);
+    }
+
+    return result;
   }
 
   private async findVariantAttributes(
@@ -1223,7 +1427,10 @@ export class AdminProductVariantService {
     return Prisma.sql`${value}::numeric`;
   }
 
-  private mapVariant(row: ProductVariantRow): ProductVariantResponse {
+  private mapVariant(
+    row: ProductVariantRow,
+    attributes: VariantAttributeRow[] = [],
+  ): ProductVariantResponse {
     return {
       id: row.id,
       product: {
@@ -1252,6 +1459,17 @@ export class AdminProductVariantService {
         availableStock: this.toNumber(row.availableStock),
         lowStockThreshold: this.toNumber(row.lowStockThreshold),
       },
+      attributes: attributes.map(
+        (attribute) => ({
+          attributeId:
+            attribute.attributeId,
+          attributeName:
+            attribute.attributeName,
+          attributeValueId:
+            attribute.attributeValueId,
+          value: attribute.value,
+        }),
+      ),
       createdAt: row.createdAt.toISOString(),
       createdAtFa: this.formatDateTimeFa(row.createdAt),
       updatedAt: row.updatedAt.toISOString(),

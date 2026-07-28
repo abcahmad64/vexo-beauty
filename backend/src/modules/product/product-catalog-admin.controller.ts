@@ -402,6 +402,24 @@ export class ProductCatalogAdminController {
     return this.adminProductCatalogService.resolveAttributeTemplate(query);
   }
 
+  /* ADMIN_VARIANT_ATTRIBUTE_MATRIX_ROUTE_V1 */
+
+  @Get('variant-attributes')
+  @ApiOperation({
+    summary:
+      'دریافت قالب و مقادیر ویژگی‌های قابل استفاده برای ساخت واریانت',
+  })
+  getVariantAttributes(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: AdminResolveProductAttributeTemplateDto,
+  ): unknown {
+    this.assertCatalogReader(req);
+
+    return this.adminProductCatalogService.getVariantAttributes(
+      query,
+    );
+  }
+
   @Post('attribute-templates')
   @ApiOperation({
     summary: 'ساخت قالب ویژگی‌های اختصاصی محصول',

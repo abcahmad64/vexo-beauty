@@ -11806,3 +11806,259 @@ img {
   }
 }
 
+/* ADMIN_VARIANT_ATTRIBUTE_SELECTOR_STYLES_V1 */
+
+.admin-variant-attribute-matrix {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid rgba(128, 132, 210, 0.16);
+  border-radius: 0.78rem;
+  background: rgba(65, 68, 132, 0.055);
+  padding: 0.8rem;
+}
+
+.admin-variant-attribute-matrix__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-variant-attribute-matrix__heading > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.admin-variant-attribute-matrix__heading strong {
+  font-size: 0.55rem;
+}
+
+.admin-variant-attribute-matrix__heading span {
+  color: var(--text-muted);
+  font-size: 0.44rem;
+  line-height: 1.8;
+}
+
+.admin-variant-attribute-matrix__heading > button {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 0.55rem;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-muted);
+}
+
+.admin-variant-attribute-matrix__heading > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.admin-variant-attribute-matrix__heading svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.admin-variant-attribute-matrix__state,
+.admin-variant-attribute-matrix__empty,
+.admin-variant-attribute-matrix__error {
+  display: flex;
+  min-height: 3.8rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px dashed rgba(255, 255, 255, 0.07);
+  border-radius: 0.65rem;
+  padding: 0.7rem;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 0.45rem;
+  line-height: 1.8;
+}
+
+.admin-variant-attribute-matrix__error {
+  border-color: rgba(224, 94, 127, 0.17);
+  background: rgba(167, 43, 76, 0.055);
+  color: #e4a6b6;
+}
+
+.admin-variant-attribute-matrix__state svg,
+.admin-variant-attribute-matrix__empty svg,
+.admin-variant-attribute-matrix__error svg {
+  width: 0.82rem;
+  height: 0.82rem;
+  flex: 0 0 auto;
+}
+
+.admin-variant-attribute-matrix__fields {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.admin-variant-attribute-field {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+}
+
+.admin-variant-attribute-field__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.admin-variant-attribute-field__label strong {
+  font-size: 0.48rem;
+  font-weight: 500;
+}
+
+.admin-variant-attribute-field__label b,
+.admin-variant-attribute-field__label small {
+  border-radius: 999px;
+  padding: 0.18rem 0.36rem;
+  font-size: 0.38rem;
+  font-weight: 500;
+}
+
+.admin-variant-attribute-field__label b {
+  background: rgba(183, 56, 91, 0.12);
+  color: #e5a5b6;
+}
+
+.admin-variant-attribute-field__label small {
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-muted);
+}
+
+.admin-variant-attribute-field select {
+  width: 100%;
+  min-height: 2.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 0.65rem;
+  outline: 0;
+  background: rgba(0, 0, 0, 0.17);
+  padding: 0.58rem 0.64rem;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.5rem;
+}
+
+.admin-variant-attribute-field select:focus-visible {
+  border-color: rgba(128, 132, 210, 0.42);
+  box-shadow:
+    0 0 0 3px rgba(108, 110, 190, 0.09);
+}
+
+.admin-variant-attribute-field select:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.admin-variant-attribute-field__help {
+  color: var(--text-muted);
+  font-size: 0.4rem;
+  line-height: 1.7;
+}
+
+.admin-variant-attribute-matrix__summary {
+  display: grid;
+  gap: 0.4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  padding-top: 0.7rem;
+}
+
+.admin-variant-attribute-matrix__summary > span {
+  color: var(--text-muted);
+  font-size: 0.42rem;
+}
+
+.admin-variant-attribute-matrix__summary > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.admin-variant-attribute-matrix__summary b {
+  border: 1px solid rgba(128, 132, 210, 0.18);
+  border-radius: 999px;
+  background: rgba(87, 89, 164, 0.1);
+  padding: 0.3rem 0.48rem;
+  color: #c4c4eb;
+  font-size: 0.41rem;
+  font-weight: 500;
+}
+
+@media (max-width: 680px) {
+  .admin-variant-attribute-matrix__fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ADMIN_VARIANT_ATTRIBUTE_DUPLICATE_STYLES_V1 */
+
+.admin-variant-attribute-matrix__duplicate {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  border: 1px solid rgba(224, 94, 127, 0.2);
+  border-radius: 0.65rem;
+  background: rgba(167, 43, 76, 0.07);
+  padding: 0.65rem;
+  color: #e4a6b6;
+}
+
+.admin-variant-attribute-matrix__duplicate > svg {
+  width: 0.82rem;
+  height: 0.82rem;
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+}
+
+.admin-variant-attribute-matrix__duplicate > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.admin-variant-attribute-matrix__duplicate strong {
+  font-size: 0.46rem;
+}
+
+.admin-variant-attribute-matrix__duplicate span {
+  font-size: 0.41rem;
+  line-height: 1.7;
+}
+
+.admin-product-variant-attributes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  margin-top: 0.38rem;
+}
+
+.admin-product-variant-attributes b {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  border: 1px solid rgba(128, 132, 210, 0.16);
+  border-radius: 999px;
+  background: rgba(87, 89, 164, 0.09);
+  padding: 0.22rem 0.38rem;
+  color: #c8c8ec;
+  font-size: 0.39rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.admin-product-variant-attributes b > span {
+  color: var(--text-muted);
+}
+
+.admin-product-variant-attributes b > span::after {
+  content: ':';
+}
+
