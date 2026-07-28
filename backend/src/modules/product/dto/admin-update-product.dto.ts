@@ -32,6 +32,26 @@ const trimOptionalString = ({ value }: { value: unknown }) => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
+/* ADMIN_PRODUCT_NULLABLE_SEO_V1 */
+
+const trimNullableOptionalString = ({ value }: { value: unknown }) => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const trimmed = value.trim();
+
+  return trimmed.length > 0 ? trimmed : null;
+};
+
 const decimalPattern = /^\d+(\.\d{1,4})?$/;
 const moneyPattern = /^\d+(\.\d{1,2})?$/;
 
@@ -169,24 +189,24 @@ export class AdminUpdateProductDto {
 
   @IsOptional()
   @IsString()
-  @Transform(trimOptionalString)
+  @Transform(trimNullableOptionalString)
   @MaxLength(180)
-  seoTitle?: string;
+  seoTitle?: string | null;
 
   @IsOptional()
   @IsString()
-  @Transform(trimOptionalString)
+  @Transform(trimNullableOptionalString)
   @MaxLength(500)
-  seoDescription?: string;
+  seoDescription?: string | null;
 
   @IsOptional()
   @IsString()
-  @Transform(trimOptionalString)
-  canonicalUrl?: string;
+  @Transform(trimNullableOptionalString)
+  canonicalUrl?: string | null;
 
   @IsOptional()
   @IsObject()
-  schemaJson?: Record<string, unknown>;
+  schemaJson?: Record<string, unknown> | null;
 
   @IsOptional()
   @IsString()

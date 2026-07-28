@@ -19,9 +19,7 @@ export async function seedAdminUser(prisma: PrismaClient): Promise<void> {
   const password = getRequiredEnvironmentVariable('SEED_ADMIN_PASSWORD');
 
   if (password.length < 14) {
-    throw new Error(
-      'SEED_ADMIN_PASSWORD must contain at least 14 characters.',
-    );
+    throw new Error('SEED_ADMIN_PASSWORD must contain at least 14 characters.');
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
