@@ -693,3 +693,114 @@ export type AdminProductDetail =
     attributes: AdminProductAttribute[];
   };
 
+
+/* ADMIN_COUPON_TYPES_V1 */
+
+export type AdminCouponType =
+  | 'PERCENTAGE'
+  | 'FIXED_AMOUNT'
+  | 'FREE_SHIPPING';
+
+export type AdminCouponStatus =
+  | 'ACTIVE'
+  | 'INACTIVE'
+  | 'EXPIRED';
+
+export type AdminCouponListMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+/* ADMIN_COUPON_RESPONSE_SHAPE_FIX_V1 */
+
+export type AdminCouponFlags = {
+  isExpired: boolean;
+  isScheduled: boolean;
+  isExhausted: boolean;
+  isCurrentlyUsable: boolean;
+};
+
+export type AdminCouponStats = {
+  usageCount: number;
+  uniqueUserCount: number;
+  orderCount: number;
+  revenueAmount: string;
+  lastUsedAt: string | null;
+  lastUsedAtFa: string | null;
+};
+
+export type AdminCouponListItem = {
+  id: string;
+  code: string;
+  type: AdminCouponType;
+  value: string;
+  description: string | null;
+  usageLimit: number | null;
+  usedCount: number;
+  remainingUsage: number | null;
+  status: AdminCouponStatus;
+  minAmount: string;
+  isActive: boolean;
+  flags: AdminCouponFlags;
+  stats: AdminCouponStats;
+  startDate: string;
+  startDateFa: string | null;
+  endDate: string | null;
+  endDateFa: string | null;
+  createdAt: string;
+  createdAtFa: string | null;
+  updatedAt: string;
+  updatedAtFa: string | null;
+  deletedAt: string | null;
+  deletedAtFa: string | null;
+};
+
+export type AdminCouponListPayload = {
+  data: AdminCouponListItem[];
+  meta: AdminCouponListMeta;
+};
+
+export type AdminCouponMutationPayload = {
+  coupon: AdminCouponListItem;
+  audit: {
+    actorId: string | null;
+    action: string;
+    status?: AdminCouponStatus;
+    reason?: string | null;
+  };
+};
+
+export type AdminCouponCreateInput = {
+  code: string;
+  type: AdminCouponType;
+  value?: string;
+  description?: string;
+  minAmount?: string;
+  usageLimit?: number;
+  startDate?: string;
+  endDate?: string;
+  isActive?: boolean;
+  status?: AdminCouponStatus;
+};
+
+export type AdminCouponUpdateInput =
+  Partial<AdminCouponCreateInput> & {
+    clearEndDate?: boolean;
+  };
+
+export type AdminCouponDashboardMetric = {
+  count: number;
+  revenueAmount: string;
+  discountAmount: string;
+};
+
+export type AdminCouponDashboardPayload = {
+  total: AdminCouponDashboardMetric;
+  active: AdminCouponDashboardMetric;
+  inactive: AdminCouponDashboardMetric;
+  expired: AdminCouponDashboardMetric;
+  exhausted: AdminCouponDashboardMetric;
+  scheduled: AdminCouponDashboardMetric;
+};
