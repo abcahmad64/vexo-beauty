@@ -804,3 +804,215 @@ export type AdminCouponDashboardPayload = {
   exhausted: AdminCouponDashboardMetric;
   scheduled: AdminCouponDashboardMetric;
 };
+
+/* ADMIN_CUSTOMER_TYPES_V1 */
+
+export type AdminCustomerStatus =
+  | 'ACTIVE'
+  | 'INACTIVE'
+  | 'SUSPENDED'
+  | 'DELETED';
+
+export type AdminCustomerVipLevel =
+  | 'none'
+  | 'bronze'
+  | 'silver'
+  | 'gold'
+  | 'platinum';
+
+export type AdminCustomerNoteVisibility =
+  | 'admin'
+  | 'support'
+  | 'finance'
+  | 'private';
+
+export type AdminCustomerRole = {
+  id: string | null;
+  name: string | null;
+  description: string | null;
+};
+
+export type AdminCustomerStats = {
+  orderCount: number;
+  completedOrderCount: number;
+  cancelledOrderCount: number;
+  totalSpent: string;
+  paymentCount: number;
+  addressCount: number;
+  reviewCount: number;
+  unreadNotificationCount: number;
+  sessionCount: number;
+  lastOrderAt: string | null;
+  lastOrderAtFa: string | null;
+  lastLoginAt: string | null;
+  lastLoginAtFa: string | null;
+};
+
+export type AdminCustomerListItem = {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  fullName: string;
+  avatarUrl: string | null;
+  status: AdminCustomerStatus;
+  role: AdminCustomerRole | null;
+  stats: AdminCustomerStats;
+  createdAt: string;
+  createdAtFa: string | null;
+  updatedAt: string;
+  updatedAtFa: string | null;
+  deletedAt: string | null;
+  deletedAtFa: string | null;
+};
+
+export type AdminCustomerListPayload = {
+  data: AdminCustomerListItem[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+export type AdminCustomerSegment = {
+  segment: string | null;
+  vipLevel: AdminCustomerVipLevel;
+  tags: string[];
+  marketingAllowed: boolean | null;
+  highRisk: boolean;
+  reason: string | null;
+  updatedAt: string | null;
+  updatedAtFa: string | null;
+};
+
+export type AdminCustomerAddress = {
+  id: string;
+  title: string | null;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  phone: string;
+  country: string;
+  state: string;
+  city: string;
+  postalCode: string;
+  street: string;
+  apartment: string | null;
+  isDefault: boolean;
+  createdAt: string;
+  createdAtFa: string | null;
+  updatedAt: string;
+  updatedAtFa: string | null;
+};
+
+export type AdminCustomerRecentOrder = {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  totalAmount: string;
+  currency: string;
+  createdAt: string;
+  createdAtFa: string | null;
+};
+
+export type AdminCustomerRecentPayment = {
+  id: string;
+  orderId: string;
+  amount: string;
+  currency: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  paidAt: string | null;
+  paidAtFa: string | null;
+  createdAt: string;
+  createdAtFa: string | null;
+};
+
+export type AdminCustomerRecentSession = {
+  id: string;
+  userAgent: string | null;
+  ipAddress: string | null;
+  expiresAt: string;
+  expiresAtFa: string | null;
+  createdAt: string;
+  createdAtFa: string | null;
+};
+
+export type AdminCustomerNote = {
+  id: string;
+  note: string | null;
+  isImportant: boolean;
+  visibility: AdminCustomerNoteVisibility;
+  actorId: string | null;
+  createdAt: string;
+  createdAtFa: string | null;
+};
+
+export type AdminCustomerProfile = {
+  user: AdminCustomerListItem;
+  segment: AdminCustomerSegment;
+  addresses: AdminCustomerAddress[];
+  recentOrders: AdminCustomerRecentOrder[];
+  recentPayments: AdminCustomerRecentPayment[];
+  recentSessions: AdminCustomerRecentSession[];
+  notes: AdminCustomerNote[];
+};
+
+export type AdminCustomerActivityItem = {
+  source: string;
+  id: string;
+  title: string;
+  description: string | null;
+  status: string | null;
+  amount: string | null;
+  currency: string | null;
+  occurredAt: string;
+  occurredAtFa: string | null;
+};
+
+export type AdminCustomerActivityPayload = {
+  data: AdminCustomerActivityItem[];
+  meta: {
+    userId: string;
+    limit: number;
+    total: number;
+  };
+};
+
+export type AdminCustomerNotesPayload = {
+  data: AdminCustomerNote[];
+  meta: {
+    userId: string;
+    total: number;
+  };
+};
+
+export type AdminCustomerMutationPayload = {
+  user: AdminCustomerListItem;
+  updatedAt?: string;
+  updatedAtFa?: string | null;
+  restoredAt?: string;
+  restoredAtFa?: string | null;
+  audit: {
+    actorId: string | null;
+    action: string;
+    reason?: string | null;
+  };
+};
+
+export type AdminCustomerSessionRevokePayload = {
+  success: boolean;
+  revokedCount: number;
+  revokedRefreshTokens: number;
+  revokedSessions: number;
+  revokedAt: string;
+  revokedAtFa: string | null;
+  audit: {
+    actorId: string | null;
+    action: string;
+  };
+};
